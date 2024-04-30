@@ -1,0 +1,91 @@
+nodes:
+  user_enter:
+    name: user_enter
+    description: user just enter the interaction
+    paths:
+      - to_node: start_register
+        conditions: "1. User accept to register"
+        need_llm_reply: true
+        llm_reply_guidance: "Ask the user if they would like to provide some information"
+        reply_example: "Would you like to providing some information to start register?"
+
+  start_register:
+    name: start_register
+    description: user accept and start register
+    paths:
+      - to_node: wait_user_input_information
+        conditions: "1. User provide the information"
+        need_llm_reply: true
+        llm_reply_guidance: "Politely ask the customer if they are willing to provide certain information. Allows users to provide multiple pieces of information at once."
+        reply_example: "Would you like to providing your name?"
+
+  wait_user_input_information:
+    name: wait_user_input_information
+    description: wait user providing more information
+    data_need_to_collect:
+      - key: Name
+        data_type: string
+      - key: Age
+        data_type: string
+      - key: gender
+        data_type: string
+        description: must be one of male, female. If user input similar value, turn to standard value
+    paths:
+      - to_node: wait_user_input_information
+        conditions: "1. User input the one of valid information in the data_need_to_collect but not fully provided."
+        need_llm_reply: true
+        llm_reply_guidance: "Politely ask the customer if they are willing to provide certain information list in data_need_to_collect. Allows users to provide multiple pieces of information at once."
+      - to_node: user_reject
+        conditions: "1.The user refuses to provide information"
+      - to_node: wait_user_choose_account_state
+        conditions: "1. data_need_to_collect is empty Or 2.The user provides all the information in the data-need-to-collect. Or 3.User changed the provided information" 
+        need_llm_reply: true
+        llm_reply_guidance: "Ask user what kind of account type(Check Account, Credit Account) they prefer."
+
+  user_reject:
+    name: user_reject
+    description: ""
+
+  wait_user_choose_account_state:
+    name: wait_user_choose_account_state
+    description: ""
+    data_need_to_collect:
+      - key: account_type
+        value: ""
+        data_type: string
+        description: must be one of Check Account, Credit Account. If user input similar value, turn to standard value
+    paths:
+      - to_node: wait_user_confirm
+        conditions: "1. User chosen the correct account type (Check account or Credit Account)"
+        need_llm_reply: true
+        llm_reply_guidance: "Ask user if the information (in data_collected )provided by user is correct."
+        reply_example: "Is the information provided by user correct? Account Type: XXX, Name: XXX, Age: XXX, Gender: XXX "
+      - to_node: wait_user_choose_account_state
+        conditions: "1. User input invalid or wrong account type"
+        need_llm_reply: true
+        llm_reply_guidance: "let user input again"
+
+  wait_user_confirm:
+    name: wait_user_confirm
+    description: ask user if the information provided by user is correct
+    paths:
+      - to_node: collect_complete
+        conditions: "1. User confirm the information provided by user is correct"
+        need_llm_reply: true
+        llm_reply_guidance: "Thanks user, and tell user they were all set."
+        reply_example: "Thank you very much, you have all set."
+      - to_node: wait_user_input_information
+        conditions: "1. User reject the information provided by user is correct. 2. User want to change the information provided by user."
+        need_llm_reply: true
+        llm_reply_guidance: "Tell user they can feel free to modify the information"
+        reply_example: "It's okay, you can adjust your information"
+
+  collect_complete:
+    name: collect_complete
+    description: completed collecting data
+    paths:
+      - to_node: collect_complete
+        conditions: if user is in StateNodeComplete, it's only can turn to StateNodeComplete
+        need_llm_reply: true
+        llm_reply_guidance: "Thanks user, and tell user they were all set."
+        reply_example: "Thank you very much, you have all set."
